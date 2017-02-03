@@ -1,5 +1,5 @@
 import sys, configparser, datetime
-import dense, conv
+import dense, conv, feat
 import tensorflow as tf, numpy as np
 
 def feed(model, config, filename):

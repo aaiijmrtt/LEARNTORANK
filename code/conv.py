@@ -10,7 +10,7 @@ def create(config):
 	model['o'] = tf.placeholder(tf.float32, [dim_b, dim_o], name = 'o')
 	model['x'] = tf.placeholder(tf.float32, [dim_b, dim_i], name = 'x')
 	for i in xrange(dim_d):
-		model['W_%i' %i] = tf.Variable(tf.random_uniform([cwidth, 1, 1, 1], -np.sqrt(6. / (dim_i + dim_o)), np.sqrt(6. / (dim_i + dim_o))), collections = [tf.GraphKeys.VARIABLES, tf.GraphKeys.REGULARIZATION_LOSSES], name = 'W_%i' %i)
+		model['W_%i' %i] = tf.Variable(tf.random_uniform([cwidth, 1, 1, 1], -np.sqrt(6. / (cwidth)), np.sqrt(6. / (cwidth))), collections = [tf.GraphKeys.VARIABLES, tf.GraphKeys.REGULARIZATION_LOSSES], name = 'W_%i' %i)
 		model['x_%i' %i] = tf.expand_dims(tf.expand_dims(model['x'], -1), -1, name = 'x_%i' %i) if i == 0 else model['y_%i' %(i - 1)]
 		model['y_%i' %i] = pool(tf.nn.conv2d(model['x_%i' %i], model['W_%i' %i], [1, cstride, 1, 1], 'VALID'), [1, pwidth, 1, 1], [1, pstride, 1, 1], 'VALID', name = 'y_%i' %i)
 		dim_i = int(np.ceil(float(int(np.ceil(float(dim_i - cwidth + 1) / float(cstride))) - pwidth + 1) / float(pstride)))
