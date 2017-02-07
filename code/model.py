@@ -1,4 +1,4 @@
-import sys, configparser, datetime, math
+import sys, configparser, datetime, math, signal
 import dense, conv, feat
 import tensorflow as tf, numpy as np
 
@@ -47,7 +47,13 @@ def ndcg(evallist):
 		ndcglist.append(dcg / idcg)
 	return ndcglist
 
+def handler(signum, frame):
+	print datetime.datetime.now(), 'execution terminated'
+	tf.train.Saver().save(sess, config.get('global', 'save'))
+	sys.exit()
+
 if __name__ == '__main__':
+	signal.signal(signal.SIGINT, handler)
 	config = configparser.ConfigParser(interpolation = configparser.ExtendedInterpolation())
 	config.read(sys.argv[1])
 
