@@ -35,17 +35,16 @@ def run(model, config, session, summary, filename, train):
 					evallist.append([qid, exp, val])
 	return total if train else total, evallist
 
-def ndcg(evallist):
+def ndcg(evallist, k = 20):
 	evaldict, ndcglist = dict(), list()
 	for qid, exp, val in evallist:
 		if qid in evaldict: evaldict[qid].append([exp, val])
 		else: evaldict[qid] = [[exp, val]]
 	for qid in evaldict:
-		dcg, idcg, dcglist, idcglist = 0., 0., map(lambda x: x[1], evaldict[qid]), map(lambda x: x[0], evaldict[qid])
-		for i, val in enumerate(sorted(dcglist, reverse = True)): dcg += float(val) / math.log((i + 2), 2)
-		for i, exp in enumerate(sorted(idcglist, reverse = True)): idcg += float(exp) / math.log((i + 2), 2)
+		dcg = sum([float(2 ** val - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: (x[1], x[0]), reverse = True)[: k])])
+		idcg = sum([float(2 ** exp - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: x[0], reverse = True)[: k])])
 		ndcglist.append(dcg / idcg)
-	return ndcglist
+	return sum(ndcglist) / len(ndcglist)
 
 def handler(signum, frame):
 	print datetime.datetime.now(), 'execution terminated'
@@ -62,16 +61,21 @@ if __name__ == '__main__':
 	model = globals()[metamodel].create(config[metamodel])
 
 	with tf.Session() as sess:
-		sess.run(tf.initialize_all_variables())
-#		tf.train.Saver().restore(sess, config.get('global', 'load'))
-		summary = tf.train.SummaryWriter(config.get('global', 'logs'), sess.graph)
+		if sys.argv[2] == 'init':
+			sess.run(tf.initialize_all_variables())
+		else:
+			tf.train.Saver().restore(sess, config.get('global', 'load'))
+			summary = tf.train.SummaryWriter(config.get('global', 'logs'), sess.graph)
 
-		print datetime.datetime.now(), 'training model'
-		trainingloss = run(model, config, sess, summary, '%s/train' %config.get('global', 'data'), True)
-		print datetime.datetime.now(), 'training loss', trainingloss
+			if sys.argv[2] == 'train':
+				print datetime.datetime.now(), 'training model'
+				trainingloss = run(model, config, sess, summary, '%s/train' %config.get('global', 'data'), True)
+				print datetime.datetime.now(), 'training loss', trainingloss
+			else:
+				print datetime.datetime.now(), 'testing model'
+				testingaccuracy, evallist = run(model, config, sess, summary, '%s/%s' %(config.get('global', 'data'), sys.argv[2]), False)
+				print datetime.datetime.now(), 'testing accuracy', testingaccuracy
+				print datetime.datetime.now(), 'normalized discounted cumulative gain', ndcg(evallist)
+
 		print datetime.datetime.now(), 'saving model'
 		tf.train.Saver().save(sess, config.get('global', 'save'))
-		print datetime.datetime.now(), 'testing model'
-		testingaccuracy, evallist = run(model, config, sess, summary, '%s/dev' %config.get('global', 'data'), False)
-		print datetime.datetime.now(), 'testing accuracy', testingaccuracy
-		print datetime.datetime.now(), 'normalized discounted cumulative gain', sum(ndcg(evallist))
