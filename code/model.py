@@ -41,10 +41,10 @@ def ndcg(evallist, k = 20):
 		if qid in evaldict: evaldict[qid].append([exp, val])
 		else: evaldict[qid] = [[exp, val]]
 	for qid in evaldict:
-		dcg = sum([float(2 ** val - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: (x[1], x[0]), reverse = True)[: k])])
-		idcg = sum([float(2 ** exp - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: x[0], reverse = True)[: k])])
+		dcg = max(sum([float(2 ** val - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: (x[1], x[0]), reverse = True)[: k])]), 1e-30)
+		idcg = max(sum([float(2 ** exp - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: x[0], reverse = True)[: k])]), 1e-30)
 		ndcglist.append(dcg / idcg)
-	return sum(ndcglist) / len(ndcglist)
+	return sum(ndcglist) / len(ndcglist) if len(ndcglist) != 0 else 0.
 
 def handler(signum, frame):
 	print datetime.datetime.now(), 'execution terminated'
@@ -62,10 +62,10 @@ if __name__ == '__main__':
 
 	with tf.Session() as sess:
 		if sys.argv[2] == 'init':
-			sess.run(tf.initialize_all_variables())
+			sess.run(tf.global_variables_initializer())
 		else:
 			tf.train.Saver().restore(sess, config.get('global', 'load'))
-			summary = tf.train.SummaryWriter(config.get('global', 'logs'), sess.graph)
+			summary = tf.summary.FileWriter(config.get('global', 'logs'), sess.graph)
 
 			if sys.argv[2] == 'train':
 				print datetime.datetime.now(), 'training model'
