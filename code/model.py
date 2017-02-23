@@ -22,10 +22,10 @@ def run(model, config, session, summary, filename, train):
 	for i in xrange(iters):
 		for ii, (qidlist, feeddict) in enumerate(feed(model, config, filename)):
 			if train:
-				val, _ = session.run([model['nll'], model['train']], feed_dict = feeddict)
+				val, _ = session.run([model['loss'], model['train']], feed_dict = feeddict)
 				total += val
 				if (ii + 1) % freq == 0:
-					summ = session.run(model['nlls'], feed_dict = feeddict)
+					summ = session.run(model['summary'], feed_dict = feeddict)
 					summary.add_summary(summ, model['gsd'].eval())
 					print datetime.datetime.now(), 'epoch', i, 'batch', ii, 'loss:', val, total
 			else:
@@ -41,8 +41,8 @@ def ndcg(evallist, k = 20):
 		if qid in evaldict: evaldict[qid].append([exp, val])
 		else: evaldict[qid] = [[exp, val]]
 	for qid in evaldict:
-		dcg = max(sum([float(2 ** val - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: (x[1], x[0]), reverse = True)[: k])]), 1e-30)
-		idcg = max(sum([float(2 ** exp - 1) / math.log((i + 2), 2) for i, exp, val in enumerate(sorted(evaldict[qid], key = lambda x: x[0], reverse = True)[: k])]), 1e-30)
+		dcg = max(sum([float(2 ** val - 1) / math.log((i + 2), 2) for i, (exp, val) in enumerate(sorted(evaldict[qid], key = lambda x: (x[1], x[0]), reverse = True)[: k])]), 1e-30)
+		idcg = max(sum([float(2 ** exp - 1) / math.log((i + 2), 2) for i, (exp, val) in enumerate(sorted(evaldict[qid], key = lambda x: x[0], reverse = True)[: k])]), 1e-30)
 		ndcglist.append(dcg / idcg)
 	return sum(ndcglist) / len(ndcglist) if len(ndcglist) != 0 else 0.
 
