@@ -21,7 +21,7 @@ def create(config, weights = None):
 
 	if lfunc == 'nll': model['loss'] = tf.reduce_sum(-tf.multiply(tf.constant(weights, dtype = tf.float32), tf.multiply(model['o'], tf.log(tf.add(model['y'], 1e-6)))), name = 'nll')
 	if lfunc == 'cse': model['loss'] = tf.reduce_sum(-tf.multiply(tf.constant(weights, dtype = tf.float32), tf.add(tf.multiply(model['o'], tf.log(tf.add(model['s'], 1e-6))), tf.multiply(tf.subtract(1., model['o']), tf.log(tf.add(tf.subtract(1., model['s']), 1e-6))))), name = 'cse')
-	if lfunc == 'fid': model['loss'] = tf.reduce_sum(tf.subtact(1, tf.multiply(tf.constant(weights, dtype = tf.float32), tf.add(tf.sqrt(tf.add(tf.multiply(model['o'], model['s']), 1e-6)), tf.sqrt(tf.add(tf.multiply(tf.subtract(1., model['o']), tf.subtract(1., model['s'])), 1e-6))))), name = 'fid')
+	if lfunc == 'fid': model['loss'] = tf.reduce_sum(tf.subtract(1, tf.multiply(tf.constant(weights, dtype = tf.float32), tf.add(tf.sqrt(tf.add(tf.multiply(model['o'], model['s']), 1e-6)), tf.sqrt(tf.add(tf.multiply(tf.subtract(1., model['o']), tf.subtract(1., model['s'])), 1e-6))))), name = 'fid')
 	model['summary'] = tf.summary.scalar(model['loss'].name, model['loss'])
 	model['gsd'] = tf.Variable(0, trainable = False, name = 'gsd')
 	model['lrd'] = tf.train.exponential_decay(lrate, model['gsd'], dstep, drate, staircase = False, name = 'lrd')
